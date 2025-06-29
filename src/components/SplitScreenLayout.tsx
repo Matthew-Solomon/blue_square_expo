@@ -8,6 +8,7 @@ const { width, height } = Dimensions.get('window');
 // Define game states
 enum GameState {
   HOME = 'Home',
+  LEVEL = 'Level',
   BATTLE = 'Battle',
   INVENTORY = 'Inventory',
   SHOP = 'Shop',
@@ -22,11 +23,19 @@ export default function SplitScreenLayout() {
   // State management
   const [gameState, setGameState] = useState<GameState>(GameState.HOME);
 
+  // Handle level start
+  const handleLevelStart = () => {
+    setGameState(GameState.LEVEL);
+  };
+
   // Render the appropriate screen based on game state
   const renderGameScreen = () => {
     switch (gameState) {
       case GameState.HOME:
-        return <PlatformerScene />;
+        return <PlatformerScene onLevelStart={handleLevelStart} />;
+      case GameState.LEVEL:
+        // For now, the level looks the same as the home screen but with the player on the left
+        return <PlatformerScene isLevel={true} />;
       case GameState.BATTLE:
         return <Text style={styles.placeholderText}>Battle Screen (Coming Soon)</Text>;
       case GameState.INVENTORY:
@@ -34,7 +43,7 @@ export default function SplitScreenLayout() {
       case GameState.SHOP:
         return <Text style={styles.placeholderText}>Shop Screen (Coming Soon)</Text>;
       default:
-        return <PlatformerScene />;
+        return <PlatformerScene onLevelStart={handleLevelStart} />;
     }
   };
 

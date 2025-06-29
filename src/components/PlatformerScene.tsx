@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Player from '../entities/Player';
 
 // Get the screen dimensions
@@ -20,18 +20,23 @@ interface BackgroundElement {
   speed: number;
 }
 
-export default function PlatformerScene() {
+// Props for PlatformerScene
+interface PlatformerSceneProps {
+  onLevelStart?: () => void;
+  isLevel?: boolean;
+}
+
+export default function PlatformerScene({ onLevelStart, isLevel = false }: PlatformerSceneProps) {
   // Create player instance
   const [player] = useState<Player>(new Player());
 
   // Game state
   const [backgroundElements, setBackgroundElements] = useState<BackgroundElement[]>([]);
+  const [gameStarted, setGameStarted] = useState(false);
 
   // Animation values
   const groundPosition = useRef(new Animated.Value(0)).current;
-
-  // Player position (centered horizontally)
-  const playerX = width / 2 - PLAYER_SIZE / 2;
+  const playerXPosition = useRef(new Animated.Value(width / 2 - PLAYER_SIZE / 2)).current;
 
   // Initialize game
   useEffect(() => {
@@ -41,7 +46,14 @@ export default function PlatformerScene() {
 
     // Start animations
     startGroundAnimation();
-  }, []);
+
+    // If in level mode, position player on the left third of the screen
+    if (isLevel) {
+      const leftThirdPosition = width / 3 - PLAYER_SIZE / 2;
+      playerXPosition.setValue(leftThirdPosition);
+      setGameStarted(true);
+    }
+  }, [isLevel]);
 
   // Game loop for moving background elements
   useEffect(() => {
@@ -97,6 +109,26 @@ export default function PlatformerScene() {
     ).start();
   };
 
+  // Start the level by animating the player to the left third of the screen
+  const startLevel = () => {
+    // Calculate the target position (left third of the screen)
+    const targetX = width / 3 - PLAYER_SIZE / 2;
+
+    // Animate the player to the target position
+    Animated.timing(playerXPosition, {
+      toValue: targetX,
+      duration: 1000, // 1 second animation
+      easing: Easing.easeInOut,
+      useNativeDriver: true
+    }).start(() => {
+      // After animation completes, set game as started and notify parent
+      setGameStarted(true);
+      if (onLevelStart) {
+        onLevelStart();
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Sky background */}
@@ -119,17 +151,27 @@ export default function PlatformerScene() {
         ))}
       </View>
 
-      {/* Player character (static) */}
-      <View
+      {/* Player character (animated) */}
+      <Animated.View
         style={[
           styles.player,
           {
             backgroundColor: player.getColor(),
             bottom: GROUND_HEIGHT,
-            left: playerX,
+            transform: [{ translateX: playerXPosition }]
           }
         ]}
       />
+
+      {/* Start button (only shown when game hasn't started) */}
+      {!gameStarted && (
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={startLevel}
+        >
+          <Text style={styles.startButtonText}>START</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Animated ground */}
       <View style={styles.ground}>
@@ -201,5 +243,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 50,
     // Position and size are set dynamically
+  },
+  startButton: {
+    position: 'absolute',
+    top: height / 4 - 50, // Position above the middle of the screen
+    left: width / 2 - 50, // Center horizontally
+    width: 100,
+    height: 40,
+    backgroundColor: '#0066cc',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  startButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });
