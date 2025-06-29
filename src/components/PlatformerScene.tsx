@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 import Player from '../entities/Player';
 
 // Get the screen dimensions
@@ -9,6 +9,7 @@ const { width, height } = Dimensions.get('window');
 const GROUND_HEIGHT = 60;
 const PLAYER_SIZE = 50;
 const BACKGROUND_SPEED = 2;
+const GROUND_SPEED = 2000; // Time in ms for ground to move across screen
 
 // Background element type
 interface BackgroundElement {
@@ -26,14 +27,20 @@ export default function PlatformerScene() {
   // Game state
   const [backgroundElements, setBackgroundElements] = useState<BackgroundElement[]>([]);
 
-  // Player position (fixed at left third)
-  const playerX = width / 3 - PLAYER_SIZE / 2;
+  // Animation values
+  const groundPosition = useRef(new Animated.Value(0)).current;
+
+  // Player position (centered horizontally)
+  const playerX = width / 2 - PLAYER_SIZE / 2;
 
   // Initialize game
   useEffect(() => {
     // Create initial background elements (white cloud-like circles in the sky)
     const initialElements = Array.from({ length: 10 }, (_, i) => createBackgroundElement(i));
     setBackgroundElements(initialElements);
+
+    // Start animations
+    startGroundAnimation();
   }, []);
 
   // Game loop for moving background elements
@@ -78,6 +85,18 @@ export default function PlatformerScene() {
     };
   };
 
+  // Start ground animation
+  const startGroundAnimation = () => {
+    Animated.loop(
+      Animated.timing(groundPosition, {
+        toValue: -width,
+        duration: GROUND_SPEED,
+        easing: Easing.linear,
+        useNativeDriver: true
+      })
+    ).start();
+  };
+
   return (
     <View style={styles.container}>
       {/* Sky background */}
@@ -100,20 +119,43 @@ export default function PlatformerScene() {
         ))}
       </View>
 
-      {/* Player character */}
+      {/* Player character (static) */}
       <View
         style={[
           styles.player,
           {
             backgroundColor: player.getColor(),
             bottom: GROUND_HEIGHT,
-            left: playerX
+            left: playerX,
           }
         ]}
       />
 
-      {/* Simple static ground */}
+      {/* Animated ground */}
       <View style={styles.ground}>
+        {/* Simple animated ground with stripes */}
+        <Animated.View
+          style={[
+            styles.groundStripes,
+            {
+              transform: [{ translateX: groundPosition }]
+            }
+          ]}
+        >
+          {/* Create stripes using Views instead of CSS */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <View
+              key={i}
+              style={{
+                position: 'absolute',
+                left: i * 100,
+                width: 50,
+                height: GROUND_HEIGHT,
+                backgroundColor: '#A0522D', // Slightly lighter brown
+              }}
+            />
+          ))}
+        </Animated.View>
       </View>
     </View>
   );
@@ -140,8 +182,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: GROUND_HEIGHT,
     backgroundColor: '#8B4513', // Brown
+    overflow: 'hidden',
   },
-
+  groundStripes: {
+    position: 'absolute',
+    width: width * 2, // Double the screen width for seamless scrolling
+    height: GROUND_HEIGHT,
+    bottom: 0,
+  },
   player: {
     position: 'absolute',
     width: PLAYER_SIZE,
