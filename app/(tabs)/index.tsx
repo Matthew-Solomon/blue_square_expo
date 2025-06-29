@@ -1,10 +1,10 @@
-import { StyleSheet, View, SafeAreaView } from 'react-native';
-import CombatDemo from '../../src/components/CombatDemo';
+import { StyleSheet, SafeAreaView } from 'react-native';
+import SplitScreenLayout from '../../src/components/SplitScreenLayout';
 
 export default function GameScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <CombatDemo />
+      <SplitScreenLayout />
     </SafeAreaView>
   );
 }
