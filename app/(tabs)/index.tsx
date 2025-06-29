@@ -1,23 +1,17 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, SafeAreaView } from 'react-native';
+import CombatDemo from '../../src/components/CombatDemo';
 
-export default function BlueSquareScreen() {
+export default function GameScreen() {
   return (
-    <View style={styles.container}>
-      <View style={styles.blueSquare} />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <CombatDemo />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#F5FCFF',
-  },
-  blueSquare: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#1E90FF', // Dodger Blue
   },
 });
