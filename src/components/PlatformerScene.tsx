@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import Player from '../entities/Player';
 
 // Get the screen dimensions
@@ -26,9 +26,6 @@ export default function PlatformerScene() {
   // Game state
   const [backgroundElements, setBackgroundElements] = useState<BackgroundElement[]>([]);
 
-  // Animation values
-  const groundPosition = useRef(new Animated.Value(0)).current;
-
   // Player position (fixed at left third)
   const playerX = width / 3 - PLAYER_SIZE / 2;
 
@@ -37,9 +34,6 @@ export default function PlatformerScene() {
     // Create initial background elements (white cloud-like circles in the sky)
     const initialElements = Array.from({ length: 10 }, (_, i) => createBackgroundElement(i));
     setBackgroundElements(initialElements);
-
-    // Start ground animation
-    animateGround();
   }, []);
 
   // Game loop for moving background elements
@@ -84,18 +78,6 @@ export default function PlatformerScene() {
     };
   };
 
-  // Animate the ground to create scrolling effect
-  const animateGround = () => {
-    groundPosition.setValue(0);
-    Animated.timing(groundPosition, {
-        toValue: -width,
-        duration: 5000,
-        useNativeDriver: true
-    }).start(() => {
-      animateGround(); // Loop the animation
-    });
-  };
-
   return (
     <View style={styles.container}>
       {/* Sky background */}
@@ -105,7 +87,7 @@ export default function PlatformerScene() {
           <View
             key={element.id}
             style={[
-              styles.backgroundElement,
+              styles.backgroundCloudElement,
               {
                 width: element.size,
                 height: element.size,
@@ -130,29 +112,8 @@ export default function PlatformerScene() {
         ]}
       />
 
-      {/* Ground with scrolling texture */}
+      {/* Simple static ground */}
       <View style={styles.ground}>
-        <Animated.View
-          style={[
-            styles.groundTextureContainer,
-            {
-              transform: [{ translateX: groundPosition }]
-            }
-          ]}
-        >
-          {/* Ground texture lines */}
-          {Array.from({ length: 20 }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.groundTextureLine,
-                {
-                  left: index * (width / 10),
-                }
-              ]}
-            />
-          ))}
-        </Animated.View>
       </View>
     </View>
   );
@@ -162,6 +123,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
+    width: '100%', // Ensure container takes full width
   },
   sky: {
     position: 'absolute',
@@ -179,27 +141,14 @@ const styles = StyleSheet.create({
     height: GROUND_HEIGHT,
     backgroundColor: '#8B4513', // Brown
   },
-  groundTextureContainer: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    height: GROUND_HEIGHT,
-    width: width * 2, // Double width for seamless scrolling
-  },
-  groundTextureLine: {
-    position: 'absolute',
-    width: 5,
-    height: 5,
-    backgroundColor: '#A0522D', // Slightly lighter brown
-    bottom: Math.random() * GROUND_HEIGHT,
-  },
+
   player: {
     position: 'absolute',
     width: PLAYER_SIZE,
     height: PLAYER_SIZE,
     // Position is set dynamically
   },
-  backgroundElement: {
+  backgroundCloudElement: {
     position: 'absolute',
     backgroundColor: 'white',
     borderRadius: 50,
