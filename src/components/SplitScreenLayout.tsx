@@ -1,33 +1,23 @@
 import React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GameProvider, GameState, useGameContext } from '../context/GameContext';
+import { StyleSheet, View } from 'react-native';
+import { GameState, useGameContext } from '../context/GameContext';
 import HomeScene from '../scenes/HomeScene';
 import LevelScene from '../scenes/LevelScene';
+import PlayerStatsDisplay from './PlayerStatsDisplay';
 
-// Get screen dimensions
-const { width, height } = Dimensions.get('window');
+export default function SplitScreenLayout() {
+  const { gameState, player } = useGameContext();
 
-/**
- * The main content of the SplitScreenLayout
- * This is separated from the provider to use the context hook
- */
-function SplitScreenContent() {
-  // Get game state from context
-  const { gameState, setGameState } = useGameContext();
-
-  // Render the appropriate screen based on game state
-  const renderGameScreen = () => {
+  // Render the appropriate scene based on game state
+  const renderTopHalf = () => {
     switch (gameState) {
       case GameState.HOME:
         return <HomeScene />;
       case GameState.LEVEL:
-        return <LevelScene />;
-      case GameState.BATTLE:
-        return <Text style={styles.placeholderText}>Battle Screen (Coming Soon)</Text>;
       case GameState.INVENTORY:
-        return <Text style={styles.placeholderText}>Inventory Screen (Coming Soon)</Text>;
       case GameState.SHOP:
-        return <Text style={styles.placeholderText}>Shop Screen (Coming Soon)</Text>;
+        // All these states use the LevelScene with different bottom content
+        return <LevelScene />;
       default:
         return <HomeScene />;
     }
@@ -35,118 +25,65 @@ function SplitScreenContent() {
 
   return (
     <View style={styles.container}>
-      {/* Top half - Game Screen */}
-      <View style={styles.gameScreen}>
-        {renderGameScreen()}
+      <View style={styles.topHalf}>
+        {renderTopHalf()}
       </View>
-
-      {/* Bottom half - Navigation Buttons */}
-      <View style={styles.navigationScreen}>
-        <Text style={styles.stateLabel}>Current State: {gameState}</Text>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.navButton, gameState === GameState.HOME ? styles.activeButton : null]}
-            onPress={() => setGameState(GameState.HOME)}
-          >
-            <Text style={styles.buttonText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, gameState === GameState.LEVEL ? styles.activeButton : null]}
-            onPress={() => setGameState(GameState.LEVEL)}
-          >
-            <Text style={styles.buttonText}>Level</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, gameState === GameState.BATTLE ? styles.activeButton : null]}
-            onPress={() => setGameState(GameState.BATTLE)}
-          >
-            <Text style={styles.buttonText}>Battle</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, gameState === GameState.INVENTORY ? styles.activeButton : null]}
-            onPress={() => setGameState(GameState.INVENTORY)}
-          >
-            <Text style={styles.buttonText}>Inventory</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, gameState === GameState.SHOP ? styles.activeButton : null]}
-            onPress={() => setGameState(GameState.SHOP)}
-          >
-            <Text style={styles.buttonText}>Shop</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.bottomHalf}>
+        {gameState === GameState.LEVEL && player && (
+          <PlayerStatsDisplay player={player} />
+        )}
       </View>
     </View>
-  );
-}
-
-/**
- * SplitScreenLayout component that divides the screen into two parts:
- * - Top half: Game screen (shows different content based on state)
- * - Bottom half: Navigation buttons
- *
- * This component provides the GameContext to all child components
- */
-export default function SplitScreenLayout() {
-  return (
-    <GameProvider>
-      <SplitScreenContent />
-    </GameProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
+    backgroundColor: '#000',
   },
-  gameScreen: {
-    height: '50%', // Take up top half of the screen
-    width: '100%',
-    backgroundColor: '#F5FCFF', // Light background for game screen
+  topHalf: {
+    height: '50%',
   },
-  navigationScreen: {
-    height: '50%', // Take up bottom half of the screen
-    width: '100%',
-    backgroundColor: '#222222', // Dark gray background for navigation
+  bottomHalf: {
+    height: '50%',
+    backgroundColor: '#222',
     padding: 20,
+  },
+  bottomContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
-    color: '#333',
-    fontSize: 24,
-    textAlign: 'center',
-    marginTop: 40,
-  },
-  stateLabel: {
-    color: 'white',
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  buttonContainer: {
+  navigationBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
-    flexWrap: 'wrap',
+    backgroundColor: '#111',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
   },
   navButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
     backgroundColor: '#444',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    marginHorizontal: 5,
-    marginVertical: 10,
-    minWidth: 120,
-    alignItems: 'center',
   },
   activeButton: {
     backgroundColor: '#0066cc',
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
     fontWeight: 'bold',
+  },
+  stateText: {
+    color: 'white',
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  infoText: {
+    color: '#aaa',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

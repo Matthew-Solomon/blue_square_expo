@@ -1,14 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BaseScene from '../components/game/BaseScene';
+import PlayerStatsDisplay from '../components/PlayerStatsDisplay';
+import { GameState, useGameContext } from '../context/GameContext';
+import Player from '../entities/Player';
 
 // Get the screen dimensions
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 // Game constants
 const PLAYER_SIZE = 50;
 
 export default function LevelScene() {
+  // Create player instance with default values from Player.ts
+  const [player] = useState(() => new Player());
+
+  // Get game context
+  const { gameState, setGameState } = useGameContext();
+
   // State for player position and game state
   const [playerPosition, setPlayerPosition] = useState({ x: width }); // Start from right edge
   const [levelStarted, setLevelStarted] = useState(false);
@@ -29,8 +38,8 @@ export default function LevelScene() {
       duration: 1000,
       useNativeDriver: true,
     }).start(() => {
-        // Final position update to ensure accuracy
-        setPlayerPosition({ x: width / 3 - PLAYER_SIZE / 2 });
+      // Final position update to ensure accuracy
+      setPlayerPosition({ x: width / 3 - PLAYER_SIZE / 2 });
 
       // Level has started after animation completes
       setLevelStarted(true);
@@ -38,16 +47,67 @@ export default function LevelScene() {
       // Remove the listener
       playerEntryAnim.removeListener(animationListener);
     });
-  }, []); // Only run on mount
+
+    // Gain experience periodically once level has started
+    const gameInterval = setInterval(() => {
+      if (levelStarted) {
+        // Gain experience points
+        player.gainExperience(1);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(gameInterval);
+      // Clean up any other resources
+    };
+  }, [levelStarted, player]);
 
   return (
     <View style={styles.container}>
-      <BaseScene playerPosition={playerPosition}>
-        {/* Level UI elements */}
-        <View style={styles.levelInfo}>
-          <Text style={styles.levelText}>Level 1</Text>
+      {/* Top half - Game Scene */}
+      <View style={styles.gameContainer}>
+        <BaseScene playerPosition={playerPosition}>
+          {/* Level UI elements */}
+          <View style={styles.levelInfo}>
+            <Text style={styles.levelText}>Level 1</Text>
+          </View>
+        </BaseScene>
+      </View>
+
+      {/* Bottom half - Player Stats with Navigation */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statsContent}>
+          <PlayerStatsDisplay player={player} />
         </View>
-      </BaseScene>
+
+        {/* Navigation buttons at the bottom */}
+        <View style={styles.navigationBar}>
+          <TouchableOpacity
+            style={[styles.navButton, gameState === GameState.HOME ? styles.activeButton : null]}
+            onPress={() => setGameState(GameState.HOME)}
+          >
+            <Text style={styles.buttonText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navButton, gameState === GameState.LEVEL ? styles.activeButton : null]}
+            onPress={() => setGameState(GameState.LEVEL)}
+          >
+            <Text style={styles.buttonText}>Level</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navButton, gameState === GameState.INVENTORY ? styles.activeButton : null]}
+            onPress={() => setGameState(GameState.INVENTORY)}
+          >
+            <Text style={styles.buttonText}>Inventory</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navButton, gameState === GameState.SHOP ? styles.activeButton : null]}
+            onPress={() => setGameState(GameState.SHOP)}
+          >
+            <Text style={styles.buttonText}>Shop</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -55,6 +115,38 @@ export default function LevelScene() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  gameContainer: {
+    height: '50%', // Top half of the screen
+  },
+  statsContainer: {
+    height: '50%', // Bottom half of the screen
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  statsContent: {
+    flex: 1,
+  },
+  navigationBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#111',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  navButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    backgroundColor: '#444',
+  },
+  activeButton: {
+    backgroundColor: '#0066cc',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   levelInfo: {
     position: 'absolute',
@@ -68,43 +160,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  scoreContainer: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 10,
-    borderRadius: 10,
-  },
-  scoreText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  distanceContainer: {
-    position: 'absolute',
-    bottom: 80,
-    left: 20,
-    right: 20,
-  },
-  distanceMeter: {
-    height: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  distanceProgress: {
-    height: '100%',
-    backgroundColor: '#0066cc',
-  },
-  distanceText: {
-    color: 'white',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 5,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   }
 });
