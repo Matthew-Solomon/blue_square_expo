@@ -1,41 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import PlatformerScene from './PlatformerScene';
+import { GameProvider, GameState, useGameContext } from '../context/GameContext';
+import HomeScene from '../scenes/HomeScene';
+import LevelScene from '../scenes/LevelScene';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-// Define game states
-enum GameState {
-  HOME = 'Home',
-  LEVEL = 'Level',
-  BATTLE = 'Battle',
-  INVENTORY = 'Inventory',
-  SHOP = 'Shop',
-}
-
 /**
- * SplitScreenLayout component that divides the screen into two parts:
- * - Top half: Game screen (shows different content based on state)
- * - Bottom half: Navigation buttons
+ * The main content of the SplitScreenLayout
+ * This is separated from the provider to use the context hook
  */
-export default function SplitScreenLayout() {
-  // State management
-  const [gameState, setGameState] = useState<GameState>(GameState.HOME);
-
-  // Handle level start
-  const handleLevelStart = () => {
-    setGameState(GameState.LEVEL);
-  };
+function SplitScreenContent() {
+  // Get game state from context
+  const { gameState, setGameState } = useGameContext();
 
   // Render the appropriate screen based on game state
   const renderGameScreen = () => {
     switch (gameState) {
       case GameState.HOME:
-        return <PlatformerScene onLevelStart={handleLevelStart} />;
+        return <HomeScene />;
       case GameState.LEVEL:
-        // For now, the level looks the same as the home screen but with the player on the left
-        return <PlatformerScene isLevel={true} />;
+        return <LevelScene />;
       case GameState.BATTLE:
         return <Text style={styles.placeholderText}>Battle Screen (Coming Soon)</Text>;
       case GameState.INVENTORY:
@@ -43,7 +29,7 @@ export default function SplitScreenLayout() {
       case GameState.SHOP:
         return <Text style={styles.placeholderText}>Shop Screen (Coming Soon)</Text>;
       default:
-        return <PlatformerScene onLevelStart={handleLevelStart} />;
+        return <HomeScene />;
     }
   };
 
@@ -63,6 +49,12 @@ export default function SplitScreenLayout() {
             onPress={() => setGameState(GameState.HOME)}
           >
             <Text style={styles.buttonText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navButton, gameState === GameState.LEVEL ? styles.activeButton : null]}
+            onPress={() => setGameState(GameState.LEVEL)}
+          >
+            <Text style={styles.buttonText}>Level</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navButton, gameState === GameState.BATTLE ? styles.activeButton : null]}
@@ -85,6 +77,21 @@ export default function SplitScreenLayout() {
         </View>
       </View>
     </View>
+  );
+}
+
+/**
+ * SplitScreenLayout component that divides the screen into two parts:
+ * - Top half: Game screen (shows different content based on state)
+ * - Bottom half: Navigation buttons
+ *
+ * This component provides the GameContext to all child components
+ */
+export default function SplitScreenLayout() {
+  return (
+    <GameProvider>
+      <SplitScreenContent />
+    </GameProvider>
   );
 }
 
